@@ -1,17 +1,16 @@
 import pytest
+import time
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from pages import UrbanRoutesPage
 from selenium.webdriver.common.by import By
+from pages import UrbanRoutesPage
 import data
 import helpers
-import time
 
 
 class TestUrbanRoutes:
     @classmethod
     def setup_class(cls):
-        # Import Selenium classes
         from selenium import webdriver
         from selenium.webdriver import DesiredCapabilities
 
@@ -21,60 +20,54 @@ class TestUrbanRoutes:
         # Initialize Chrome driver
         cls.driver = webdriver.Chrome()
         cls.driver.maximize_window()
+        print("Browser launched and maximized")
         time.sleep(2)
+
+        # Initialize page object
+        cls.page = UrbanRoutesPage(cls.driver)
+        print("UrbanRoutesPage initialized")
 
     def test_set_address(self):
+        print("Starting test: set_address")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
-        self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-        time.sleep(2)
+        print("Navigated to Urban Routes URL")
+        ADDRESS_FROM, ADDRESS_TO = self.page.set_address("East 2nd Street, 601", "1300 1st St")
+        print(f"Set addresses: From='{ADDRESS_FROM}', To='{ADDRESS_TO}'")
+        assert "East 2nd Street, 601" in ADDRESS_FROM
+        assert "1300 1st St" in ADDRESS_TO
+        print("Addresses verified successfully\n")
 
     def test_select_supportive_plan(self):
+        print("Starting test: select_supportive_plan")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-        time.sleep(2)
+        print("Supportive Plan selected")
+
+        # Verify supportive plan selected by checking for "active" class on the tariff-card-4 button
+        supportive_button = self.driver.find_element(By.CSS_SELECTOR, "button[data-for='tariff-card-4']")
+        assert "active" in supportive_button.get_attribute("class"), "Supportive Plan button not active"
+        print("Assertion passed: Supportive Plan is active\n")
 
     def test_enter_phone_number(self):
+        print("Starting test: enter_phone_number")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-
-        print("Step 4: Revealing phone input form...")
+        print("Supportive Plan selected")
         self.page.reveal_phone_input_form()
-        print("Phone input form revealed.")
-
-        print(f"Step 5: Entering phone number: {data.PHONE_NUMBER}...")
+        print("Phone input form revealed")
         self.page.enter_phone_number(data.PHONE_NUMBER)
+        print(f"Entered phone number: {data.PHONE_NUMBER}")
         self.page.click_next_button()
-        print("Phone number entered and Next button clicked.")
+        print("Clicked Next button")
 
-        print("Step 6: Polling for SMS confirmation code...")
         code = None
         for i in range(20):
             try:
@@ -83,219 +76,132 @@ class TestUrbanRoutes:
                     print(f"SMS code retrieved: {code}")
                     break
             except Exception:
-                print(f"SMS code not found yet, retry {i + 1}/20...")
+                print(f"Retry {i + 1}/20 for SMS code...")
                 time.sleep(2)
-        if not code:
-            raise Exception("Phone confirmation code still not found after waiting.")
-
-        print(f"Step 7: Entering SMS code: {code}...")
+        assert code, "Phone confirmation code not retrieved"
         self.page.enter_sms_code(code)
-        print("SMS code entered.")
+        print("SMS code entered successfully\n")
 
     def test_add_credit_card(self):
+        print("Starting test: add_credit_card")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-
-        print("Step 4: Opening Payment Method...")
+        print("Supportive Plan selected")
         self.page.open_payment_method()
-        print("Payment method opened.")
-
-        print("Step 5: Clicking 'Add Card'...")
+        print("Payment method opened")
         self.page.click_add_card()
-        print("'Add Card' clicked.")
-
-        print(f"Step 6: Entering card number: {data.CARD_NUMBER} and code: {data.CARD_CODE}...")
+        print("'Add Card' button clicked")
         self.page.enter_card_number(data.CARD_NUMBER)
+        print(f"Entered card number: {data.CARD_NUMBER}")
         self.page.enter_card_code(data.CARD_CODE)
-
-        print("Step 7: Changing focus to trigger validation...")
+        print(f"Entered card code: {data.CARD_CODE}")
         self.page.blur_card_code_field()
-
-        print("Step 8: Waiting for 'Link' button to become clickable...")
+        print("Blurred card code field")
         self.page.wait_for_link_button_clickable()
-
-        print("Step 9: Clicking 'Link' to add card...")
+        print("'Link' button is clickable")
         self.page.click_link_button()
-        print("'Link' clicked.")
-
-        print("Step 10: Verifying that card was added successfully...")
+        print("'Link' button clicked")
         payment_text = self.page.get_payment_method_text()
-        print(f"Payment method text: {payment_text}")
-        time.sleep(2)
-        assert payment_text == "Card", f"Expected payment method to be 'Card', got '{payment_text}'"
-        print("Credit card added successfully.")
+        assert payment_text == "Card"
+        print("Credit card added and verified successfully\n")
 
     def test_comment_for_driver(self):
+        print("Starting test: comment_for_driver")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-
-        print(f"Step 4: Entering driver comment: {data.COMMENT}...")
+        print("Supportive Plan selected")
         self.page.enter_driver_comment(data.COMMENT)
-        print("Driver comment entered.")
-
-        print("Step 5: Verifying stored driver comment...")
+        print(f"Entered driver comment: {data.COMMENT}")
         stored_comment = self.page.get_driver_comment_text()
-        print(f"Stored comment: {stored_comment}")
-        time.sleep(2)
-        assert stored_comment == data.COMMENT, f"Expected comment '{data.COMMENT}', got '{stored_comment}'"
-        print("Driver comment verified successfully.")
+        assert stored_comment == data.COMMENT
+        print("Driver comment verified successfully\n")
 
     def test_order_blanket_and_handkerchiefs(self):
+        print("Starting test: order_blanket_and_handkerchiefs")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-
-        print("Step 4: Toggling Blanket and Handkerchiefs...")
+        print("Supportive Plan selected")
         self.page.toggle_blanket_handkerchiefs()
-        print("Blanket and Handkerchiefs toggled.")
-
-        print("Step 5: Verifying Blanket and Handkerchiefs selection...")
-        added = self.page.is_blanket_handkerchiefs_added()
-        print(f"Selection confirmed: {added}")
-        time.sleep(2)
-        assert added, "Blanket and Handkerchiefs selection was not confirmed"
-        print("Blanket and Handkerchiefs selection verified successfully.")
+        print("Toggled Blanket and Handkerchiefs")
+        assert self.page.is_blanket_handkerchiefs_added()
+        print("Blanket and Handkerchiefs verified successfully\n")
 
     def test_order_2_ice_creams(self):
+        print("Starting test: order_2_ice_creams")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-
-        print("Step 4: Adding 2 Ice Creams...")
+        print("Supportive Plan selected")
         self.page.add_ice_cream(count=2)
-        print("Ice Creams added.")
-
-        print("Step 5: Verifying Ice Cream count...")
+        print("Added 2 ice creams")
         ice_cream_count = self.page.get_ice_cream_count()
-        print(f"Ice Cream count: {ice_cream_count}")
-        time.sleep(2)
-        assert ice_cream_count == 2, f"Expected 2 ice creams, got {ice_cream_count}"
-        print("Ice Cream count verified successfully.")
+        assert ice_cream_count == 2
+        print("Ice cream count verified successfully\n")
 
     def test_car_search_modal_appears(self):
+        print("Starting test: car_search_modal_appears")
         self.driver.get(data.URBAN_ROUTES_URL)
-        self.page = UrbanRoutesPage(self.driver)
-
-        # Step 1: Set addresses
-        print("Step 1: Setting addresses...")
         self.page.set_address("East 2nd Street, 601", "1300 1st St")
-        print("Addresses set successfully.")
-
-        # Step 2: Call a Taxi
-        print("Step 2: Clicking 'Call a Taxi' button...")
+        print("Addresses set")
         self.page.call_taxi_button()
-        print("'Call a Taxi' button clicked.")
-
-        # Step 3: Select the Supportive Plan
-        print("Step 3: Selecting the Supportive Plan...")
+        print("'Call a Taxi' button clicked")
         self.page.select_supportive_plan()
-        print("Supportive Plan selected.")
-
-        # Step 4: Reveal phone input form and enter phone number
-        print("Step 4: Revealing phone input form...")
+        print("Supportive Plan selected")
         self.page.reveal_phone_input_form()
-        print("Phone input form revealed.")
-        print(f"Entering phone number: {data.PHONE_NUMBER}...")
+        print("Phone input form revealed")
         self.page.enter_phone_number(data.PHONE_NUMBER)
+        print(f"Entered phone number: {data.PHONE_NUMBER}")
         self.page.click_next_button()
-        print("Phone number entered and Next button clicked.")
+        print("Clicked Next button")
 
-        # Step 5: Poll for SMS code
-        print("Step 5: Polling for SMS confirmation code...")
         code = None
-        for i in range(20):  # wait up to ~40s
+        for i in range(20):
             try:
                 code = helpers.retrieve_phone_code(self.driver)
                 if code:
                     print(f"SMS code retrieved: {code}")
                     break
             except Exception:
-                print(f"SMS code not found yet, retry {i + 1}/20...")
+                print(f"Retry {i + 1}/20 for SMS code...")
                 time.sleep(2)
-        if not code:
-            raise Exception("Phone confirmation code not found after waiting.")
-
-        # Step 6: Enter SMS code
-        print(f"Step 6: Entering SMS code: {code}...")
+        assert code, "SMS code not retrieved"
         self.page.enter_sms_code(code)
-        print("SMS code entered.")
+        print("SMS code entered")
 
-        # Step 7: Click Confirm button after entering SMS code
-        print("Step 7: Clicking Confirm button...")
         wait = WebDriverWait(self.driver, 15)
         confirm_btn = wait.until(EC.element_to_be_clickable(self.page.CONFIRM_BUTTON))
         confirm_btn.click()
-        print("Confirm button clicked.")
+        print("Clicked Confirm button")
 
-        # Step 8: Enter a message for the driver
-        print(f"Step 8: Entering driver comment: {data.COMMENT}...")
         self.page.enter_driver_comment(data.COMMENT)
-        print("Driver comment entered.")
+        print(f"Entered driver comment: {data.COMMENT}")
 
-        # Step 9: Click the Order button
-        print("Step 9: Clicking Order button...")
         WebDriverWait(self.driver, 15).until(
             EC.element_to_be_clickable(self.page.ORDER_BUTTON)
         ).click()
-        print("Order button clicked.")
+        print("Clicked Order button")
 
-        # Step 10: Verify the car search modal appears
-        print("Step 10: Verifying that the car search modal appears...")
-        print("CAR_SEARCH_MODAL locator:", self.page.CAR_SEARCH_MODAL)
-
-        time.sleep(2)  # buffer for animations
-
-        wait = WebDriverWait(self.driver, 40)  # increased timeout
+        wait = WebDriverWait(self.driver, 40)
         modal = wait.until(EC.visibility_of_element_located(self.page.CAR_SEARCH_MODAL))
-        assert modal.is_displayed(), "Car search modal did not appear after placing order"
-        print("Car search modal is displayed successfully.")
+        assert modal.is_displayed()
+        print("Car search modal verified successfully\n")
 
     @classmethod
     def teardown_class(cls):
         cls.driver.quit()
+        print("Browser closed")
