@@ -3,8 +3,8 @@ from typing import Any
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 import data
@@ -98,13 +98,22 @@ class UrbanRoutesPage:
         return self.driver.find_element(*self.CARD_PAYMENT_SELECTED_LOCATOR).text
 
     def click_payment_method(self):
-        self.driver.find_element(*self.PAYMENT_METHOD_LOCATOR).click()
+        wait = WebDriverWait(self.driver, 15)
+        payment_method = wait.until(
+            EC.element_to_be_clickable(self.PAYMENT_METHOD_LOCATOR)
+        )
+        payment_method.click()
 
     def click_link_button(self):
         self.driver.find_element(*self.LINK_LOCATOR).click()
 
     def click_add_card(self):
-        self.driver.find_element(*self.ADD_CARD_LOCATOR).click()
+        wait = WebDriverWait(self.driver, 15)
+
+        wait.until(EC.visibility_of_element_located(self.ADD_CARD_LOCATOR))
+        add_card = wait.until(EC.element_to_be_clickable(self.ADD_CARD_LOCATOR))
+
+        add_card.click()
 
     def enter_card_number(self, number):
         self.driver.find_element(*self.ENTER_CARD_NUMBER_LOCATOR).send_keys(number)

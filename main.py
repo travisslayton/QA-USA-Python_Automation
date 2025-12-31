@@ -63,8 +63,8 @@ class TestUrbanRoutes:
         self.driver.get(data.URBAN_ROUTES_URL)
         urban = UrbanRoutesPage(self.driver)
         urban.set_route(data.ADDRESS_FROM, data.ADDRESS_TO)
-        urban.enter_driver_comment(data.COMMENT)
-        assert urban.get_driver_comment() == data.COMMENT
+        urban.enter_driver_comment(data.MESSAGE_FOR_DRIVER)
+        assert urban.get_driver_comment() == data.MESSAGE_FOR_DRIVER
 
     def test_order_blanket_and_handkerchiefs(self):
         self.driver.get(data.URBAN_ROUTES_URL)
@@ -87,10 +87,9 @@ class TestUrbanRoutes:
         urban = UrbanRoutesPage(self.driver)
         urban.set_route(data.ADDRESS_FROM, data.ADDRESS_TO)
         urban.select_plan()
-        urban.enter_driver_comment(data.COMMENT)
+        urban.enter_driver_comment(data.MESSAGE_FOR_DRIVER)
         urban.click_car_order_button()
         assert urban.get_car_order_visible()
-
 
     @classmethod
     def teardown_class(cls):
